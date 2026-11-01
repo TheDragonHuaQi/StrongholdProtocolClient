@@ -204,27 +204,38 @@ Android 不需要这个处理：Capacitor 固定从 `https://localhost` 提供�
 
 规则：
 
-- **项目 key = 最初那台机器的 debug keystore**，证书 SHA-256 = `80f08c97…3744`（就是 `client.config.json` 里的 `signerSha256`，公开信息，故意提交）。
+- **项目 key = 本 fork 自己的 debug keystore**，证书 SHA-256 = `8152e091…7bc9`（就是 `client.config.json` 里的 `signerSha256`，公开信息，故意提交）。文件是 `E:\卫\android-sdk\sp-signing.keystore`，已复制到 `~/.android/debug.keystore`，所以默认解析路径就找得到。上游原来那把（`80f08c97…`）在原作者机器上、拿不到，所以本 fork 换成了这一把——代价见本节末尾「换 key 的代价」。
 - `mobile/android/app/build.gradle` 在**配置期**解析 keystore 并核对指纹，**不符就拒绝构建**（不是警告）。解析顺序：
   1. `-Psp.keystore=<path>`（Gradle 参数）
   2. `SP_KEYSTORE=<path>`（环境变量）
   3. `mobile/android/local.properties` 里的 `sp.keystore=<path>`（该文件已 gitignore）
   4. `~/.android/debug.keystore`（默认；凭据默认 `android` / `androiddebugkey` / `android`，可用 `sp.keystore.password` / `sp.key.alias` / `sp.key.password` 覆盖）
 - 打包后还会**再验一次产物**（`tools/package-android.mjs` 用 `apksigner verify --print-certs`），发到 GitHub 之前**第三次**验（`tools/publish-release.mjs`，指纹不符直接拒绝上传）。三道闸共用 `tools/android-signing.mjs`。
-- 换机器：把最初那台的 `~/.android/debug.keystore`（2618 字节，SHA-256 `e8ddf6fe91df2b7c95579e14c8e7ab42e08fd9ea60256df07734c7f64c12f1aa`）复制过去即可，无需其它配置；丢了这把 key 就再也发不出"能覆盖安装"的包（只能让所有人卸载一次），**请离线备份**。
+- 换机器：把 `sp-signing.keystore`（2666 字节，PKCS12，别名 `androiddebugkey`，口令 `android`）复制到新机器的 `~/.android/debug.keystore` 即可，无需其它配置。**丢了这把 key 就再也发不出"能覆盖安装"的包**（只能换一把、让所有人卸载一次），所以至少要离线备份一份。
 
 ```powershell
 # 别的机器上确认自己用的是项目 key（构建时会打印，也可以直接查）
 & "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0\apksigner.bat" verify --print-certs app-debug.apk
-# 期望 Signer #1 certificate SHA-256 digest: 80f08c97e4b24eb62b415df034b069ae4381d8cfb1d96895a5a9c1471b613744
+# 期望 Signer #1 certificate SHA-256 digest: 8152e09191929b54fa65448c78b7e30550cb09d18169e3c4245ddfbf36a67bc9
 
 # 故意用错的 key 试守卫（应立刻失败，并列出双方指纹）
 $env:SP_KEYSTORE="$env:TEMP\wrong.jks"; .\gradlew.bat assembleDebug
 ```
 
-**代价与后续**：目前发的仍是 `debuggable=true` 的 debug 包。好处是**保住了已装玩家的存档**（从最初那台机器上装的版本可以直接覆盖升级）；代价是包可被调试。将来若换成正式 release key，**所有人**都要卸载一次——那时再决定（届时可先做存档导出/导入）。
+**代价与后续**：目前发的仍是 `debuggable=true` 的 debug 包。好处是覆盖安装不丢存档，而且 `run-as` 能直接备份应用数据（下面「换 key 之后怎么保住存档」就靠它）；代价是包可被调试。将来若换成正式 release key，**所有人**都要卸载一次——那时再决定。
 
-> 已发布的 `v0.2.1-b2` 是另一台机器打的（那把 key 与项目不同），装过它的设备需要卸载一次；其它已发布版本都用项目这把 key，互相之间可以覆盖安装。
+### 换 key 之后怎么保住存档
+
+官方包是 `debuggable=true` 的 debug 构建，所以**不用 root**：`adb shell run-as site.starst.stronghold tar cf - .` 就能把应用私有目录（续连 token、设置、干员调配）整份抓出来，装好新包再写回去。`tools/switch-signing-key.ps1` 把这一串做完了，**默认只检查环境并打印计划**，加 `-Execute` 才真正动手机：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch-signing-key.ps1           # 检查 adb / 设备，打印计划
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\switch-signing-key.ps1 -Execute  # 备份 → 卸载 → 安装 → 还原
+```
+
+它在备份失败、备份文件过小、卸载失败时立刻中止——不会出现"已经卸了但装不回去"。真机上跑之前请先确认计划里写的版本号和 target 是不是你要换的那个。
+
+> 已发布的 `v0.2.1-b2` 是另一台机器打的（那把 key 与项目不同），装过它的设备需要卸载一次。**上游官方发布的包也用另一把 key（`80f08c97…`），本 fork 拿不到**——装过官方包的设备同样要先卸载一次，用上面的脚本可以把存档带过去。
 
 需要单独出未 debug 的 release 包时（**必须用同一把 key**，否则一样装不上）：
 

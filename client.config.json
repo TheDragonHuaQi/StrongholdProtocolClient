@@ -6,7 +6,7 @@
     "feed": "https://github.com/Starst796/StrongholdProtocolClient/releases/latest/download/latest.json"
   },
   "android": {
-    "signerSha256": "80f08c97e4b24eb62b415df034b069ae4381d8cfb1d96895a5a9c1471b613744",
-    "keystoreHint": "项目的 Android 签名 key —— 也就是最初那台机器上 ~/.android/debug.keystore 里的 debug key。换机器打包时把这个文件复制过去（或设 SP_KEYSTORE / -Psp.keystore 指向它）：指纹必须与 signerSha256 一致，否则拒绝出包。指纹是公开信息，故意提交在这里。"
+    "signerSha256": "8152e09191929b54fa65448c78b7e30550cb09d18169e3c4245ddfbf36a67bc9",
+    "keystoreHint": "本 fork 的 Android 签名 key：E:\\卫\\android-sdk\\sp-signing.keystore（已复制到 ~/.android/debug.keystore，所以默认解析路径就能找到）。上游原来那把 key（80f08c97…）在原作者机器上、拿不到，所以本 fork 换成了这一把 —— 手机上装过上游官方包的设备需要卸载一次，卸载前可以先用 tools/switch-signing-key.ps1 把存档备份出来。换机器打包时把这个 keystore 文件复制过去（或设 SP_KEYSTORE / -Psp.keystore 指向它）：指纹必须与 signerSha256 一致，否则拒绝出包。指纹是公开信息，故意提交在这里。"
   }
 }

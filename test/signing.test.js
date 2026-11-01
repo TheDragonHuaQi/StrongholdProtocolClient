@@ -42,11 +42,12 @@ describe('the project key is pinned', () => {
     assert.ok(CONFIG.android?.keystoreHint, 'and says where the keystore lives / how to bring it along');
   });
 
-  test('it is the key every APK released so far was signed with', () => {
-    // History: 0.1.0 … 0.2.0 were all built on the machine that owns that debug keystore, and Android accepted each
-    // update over the previous one — so that fingerprint is the one installed players already have. Changing this
-    // value means every player must uninstall.
-    assert.equal(PROJECT_KEY, '80f08c97e4b24eb62b415df034b069ae4381d8cfb1d96895a5a9c1471b613744');
+  test('it is this fork\u2019s own key, because upstream\u2019s is unavailable', () => {
+    // History: 0.1.0 … 0.2.0 were built on the machine that owns 80f08c97…, so every official APK carries that
+    // certificate — and that keystore is on a machine this fork does not have. So everything built here from 0.3.3 on
+    // is signed with 8152e091…, which means a device holding an official build must uninstall once first
+    // (tools/switch-signing-key.ps1 backs the app data up and restores it around that uninstall).
+    assert.equal(PROJECT_KEY, '8152e09191929b54fa65448c78b7e30550cb09d18169e3c4245ddfbf36a67bc9');
   });
 });
 
