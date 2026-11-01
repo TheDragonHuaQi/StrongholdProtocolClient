@@ -1,7 +1,7 @@
-﻿# 换签名钥匙时的「保存档」切换脚本（Windows / PowerShell 7）
+﻿# 换签名钥匙时的「保存档」切换脚本（Windows / PowerShell 5.1+）
 #
-# 背景：官方的 APK 用项目 key（80f08c97…3744）签名，这台机器只有自己的 debug key
-#       （8152e091…），所以新包不能覆盖安装。要保住存档，就不能直接卸载重装。
+# 背景：上游官方发布的 APK 用原作者那把 key（80f08c97…）签名，本 fork 从 0.3.3 起改用自己这把
+#       （8152e091…），所以新包装不上装过官方包的手机。要保住存档，就不能直接卸载重装。
 #
 # 原理：项目发布的 APK 是 *debug* 构建（android:debuggable=true），所以不用 root，
 #       用 `adb shell run-as <包名>` 就能把应用私有目录整个打包出来，装完新包再放回去。
@@ -16,12 +16,16 @@
 param(
   [string]$Apk = '',
   [string]$Package = 'site.starst.stronghold',
-  [string]$BackupDir = 'E:\卫\out',
+  [string]$BackupDir = '',
   [switch]$Execute,
   [switch]$SkipBackup
 )
 
 $ErrorActionPreference = 'Stop'
+
+$repoRoot = Split-Path $PSScriptRoot -Parent
+if (-not $BackupDir) { $BackupDir = Join-Path $repoRoot 'out' }
+New-Item -ItemType Directory -Force -Path $BackupDir | Out-Null
 
 function Fail($msg) { Write-Host "错误: $msg" -ForegroundColor Red; exit 1 }
 
