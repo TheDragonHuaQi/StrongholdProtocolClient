@@ -92,7 +92,7 @@ android {
         applicationId "site.starst.stronghold"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3030008
+        versionCode 3030009
         versionName "0.3.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
